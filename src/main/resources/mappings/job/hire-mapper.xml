@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HireDAO">
+
+
+<select id="getHireList" parameterType="jobVO" resultType="hireVO">
+	SELECT *
+		FROM (
+		       SELECT ROWNUM R_NUM, HIRE.*
+		        FROM (SELECT *
+		                FROM T_JOB_HIRE
+		               ORDER BY HIRE_IDX DESC) HIRE
+		               WHERE 1=1
+		              	
+					    
+						<if test="addrFilter">  
+							 AND ( 
+						    	HIRE.DO_EN IN
+					
+							    <foreach collection="do_en" item="do" index="index" open="(" separator="," close=")"> 
+					          		  #{do} 
+					       		</foreach> 
+					       		
+					       		OR	
+					       		
+					       		HIRE.GU_GUN_EUP_ENG IN
+								<foreach collection="gu_gun_eup_en" item="si" index="index" open="(" separator="," close=")"> 
+					          		#{si} 
+					       		</foreach> 
+					       	)
+				       	</if>
+				       	<if test="cateFilter">
+			      			 AND (
+				       			  HIRE.CATE_PRNT_EN IN #{cate_prnt_en}
+			       	 		  )
+	  					 </if>
+				       	<if test="cateChildFilter">
+			      			 AND (
+				       			 HIRE.CATE_CHILD_EN IN 
+				       			 <foreach collection="cate_child_en" item="cateChild" index="index" open="(" separator="," close=")"> 
+					          		  #{cateChild} 
+					       		</foreach> 
+			       	 		  )
+	  					 </if>
+	  					 <if test="payFilter">
+			      			 AND (
+				       			 HIRE.PAYMENT_CODITION IN 
+				       			 <foreach collection="payCondition" item="pay" index="index" open="(" separator="," close=")"> 
+					          		  #{pay} 
+					       		</foreach> 
+			       	 		  )
+	  					 </if>
+	  					<if test="searchFilter">
+	  						AND (HIRE.TITLE LIKE '%' || #{searchKeyword} || '%')
+	  					 </if> 
+       		)
+	  WHERE R_NUM BETWEEN #{begin} AND #{end}
+	  
+</select>
+
+<select id="hireListTotal" parameterType="jobVO" resultType="int">
+		SELECT COUNT(*) 
+		  FROM T_JOB_HIRE
+		WHERE 1=1
+		<if test="addrFilter">  
+			 AND ( 
+		    	DO_EN IN
+			    <foreach collection="do_en" item="do" index="index" open="(" separator="," close=")"> 
+	          		  #{do} 
+	       		</foreach> 
+	       		
+	       		OR	
+	       		
+	       		GU_GUN_EUP_ENG IN
+				<foreach collection="gu_gun_eup_en" item="si" index="index" open="(" separator="," close=")"> 
+	          		#{si} 
+	       		</foreach> 
+	       	)
+       	</if>
+       	<if test="cateFilter">
+     			 AND (
+       				 CATE_PRNT_EN IN #{cate_prnt_en}
+      	 		  )
+		</if>
+       	<if test="cateChildFilter">
+     			 AND (
+       			 CATE_CHILD_EN IN 
+       			 <foreach collection="cate_child_en" item="cateChild" index="index" open="(" separator="," close=")"> 
+	          		  #{cateChild} 
+	       		</foreach> 
+      	 		  )
+				 </if>
+		 <if test="payFilter">
+     			 AND (
+       			 PAYMENT_CODITION IN 
+       			 <foreach collection="payCondition" item="pay" index="index" open="(" separator="," close=")"> 
+	          		  #{pay} 
+	       		</foreach> 
+      	 		  )
+		 </if>
+</select>
+
+<select id="hireDetailOne" parameterType="int" resultType="hireVO">
+		SELECT *
+		  FROM T_JOB_HIRE
+		 WHERE HIRE_IDX = #{hire_idx}
+</select>
+
+	<!-- ===================================insert================================== -->
+	
+<!-- CompanyVO insert -->
+	
+	<insert id="insertHire" parameterType="hireVO">
+		INSERT INTO T_JOB_HIRE(ADDRESS ,ADDRESS_EN, ADDR_DT_EN, ADDR_DT_KOR, APPLY_WAY, 
+                        BOARD_IDX, B_STATUS, CATE_CHILD_EN, CATE_CHILD_KO, CATE_PRNT_EN, CATE_PRNT_KO, COMPANY_NAME,
+                        DOMITORY, DO_EN, DO_KOR, 
+                        EDUCATION, EXPERIENCE, 
+                        FOREIGN_LANGUAGE,
+                        GU_GUN_EUP_ENG, GU_GUN_EUP_KOR,
+                        HIRE_AGE_MAX, HIRE_AGE_MIN, HIRE_IDX, HIRE_NUMBER, HIT,
+                        INSURANCE, IP,
+                        MAJOR, MEALS, MEM_ID,
+                        PAYMENT_CODITION, PAYMENT_DETAIL, PREFER_SKILLS, PREPARE_DOC , 
+                        REGDATE, SALARY_MAX, SALARY_MIN ,
+                        TITLE, 
+                        WORK_DETAIL, WORK_TIME, WORK_TYPE,COMPANY_IDX
+                      )
+	    VALUES (
+	            #{address} ,#{address_en}, #{addr_dt_en}, #{addr_dt_kor}, #{apply_way}, 
+	            2, 1, #{cate_child_en}, #{cate_child_ko}, #{cate_prnt_en}, #{cate_prnt_ko}, #{company_name},
+	            #{domitory}, #{do_en}, #{do_kor}, 
+	            #{education}, #{experience}, 
+	            #{foreign_language},
+	            #{gu_gun_eup_eng}, #{gu_gun_eup_kor},
+	            #{hire_age_max}, #{hire_age_min}, HIRE_SQ.NEXTVAL, #{hire_number}, 0,
+	            #{insurance}, #{ip},
+	            #{major}, #{meals}, #{mem_id},
+	            #{payment_codition}, #{payment_detail}, #{prefer_skills}, #{prepare_doc}, 
+	            sysdate, #{salary_max}, #{salary_min},
+	            #{title}, 
+	            #{work_detail}, #{work_time}, #{work_type},(SELECT COMPANY_IDX FROM T_COMPANY WHERE MEM_ID=#{mem_id})
+	            )
+	</insert>
+	
+	<insert id="wishInsert" parameterType="hireVO">
+		INSERT INTO T_WISH_LIST(WISH_IDX, MEM_ID, B_IDX, BOARD_IDX, REGDATE)
+		  VALUES (WISH_SQ.NEXTVAL, #{mem_id}, #{hire_idx}, 2, SYSDATE)
+	</insert>
+	
+<!-- CompanyVO insert End -->	
+	
+	
+	
+	<update id="hireHIT" parameterType="int">
+		UPDATE T_JOB_HIRE SET HIT = HIT + 1 WHERE HIRE_IDX = #{hire_idx}
+	</update>
+</mapper>
+
+
+
+
+<!--
+		 AND ( 
+		    
+		    <if test="do_enList !=null ">
+		    	
+		    	BOARD.DO_EN IN
+		    	<foreach collection="do_enList" item="do" index="index" open="(" separator="," close=")"> 
+          			  #{do} 
+       			</foreach> 
+       		</if>
+       		<if test=" (do_enList != null) and (gu_gun_eup_engList != null) ">
+       			OR	
+       		</if>
+       		<if test="gu_gun_eup_engList != null">
+       		
+       			BOARD.GU_GUN_EUP_ENG IN 
+				<foreach collection="gu_gun_eup_engList" item="si" index="index" open="(" separator="," close=")"> 
+          			#{si} 
+       			</foreach> 
+       		</if>
+			) 
+       		
+		ORDER BY 
+			BOARD.ROOM_IDX  
+			
+-->
+
+
+
+

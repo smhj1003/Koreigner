@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="c_MyPage">
+
+	
+
+	<select id="getHireMyAdsList" parameterType="p_MyPageVO" resultType="hireVO">
+		SELECT *
+		FROM (
+		       SELECT ROWNUM R_NUM, HIRE.*
+		        FROM (SELECT *
+		              FROM T_JOB_HIRE 
+		              WHERE 
+						MEM_ID= #{mem_id}  	
+		                
+		               ORDER BY HIRE_IDX DESC) HIRE
+		 )
+		 WHERE R_NUM BETWEEN #{begin} AND #{end} 
+	</select>
+	<select id="getResumeApplyList" parameterType="c_MyPageVO" resultType="hashmap">
+	SELECT *
+	FROM (
+	       SELECT ROWNUM R_NUM, RESUME.*
+	        FROM (  SELECT  H.TITLE,R.RESUME_IDX,R.MEM_ID,R.MEM_NAME,R.WISH_DO,R.WISH_SI,R.JOB_CATE,R.JOB_CATE_CHILD,
+                            A.APPLY_IDX,A.COMPANY_IDX,A.HIRE_IDX,A.REGDATE,A.STATE
+	                FROM T_MEMBER_RESUME R,
+                     (   SELECT RESUME_IDX, APPLY_IDX,COMPANY_IDX,HIRE_IDX,REGDATE,STATE
+                            FROM T_MEMBER_APPLY
+                            WHERE HIRE_IDX IN(  SELECT HIRE_IDX
+                                                FROM T_JOB_HIRE
+                                                WHERE COMPANY_IDX=(SELECT COMPANY_IDX 
+                                                         FROM T_COMPANY 
+                                                     WHERE MEM_ID=#{mem_id}
+                                                   )
+                                             )
+                            AND STATE=1 
+	                     )A,
+                         (   SELECT TITLE,HIRE_IDX
+                            FROM T_JOB_HIRE
+                            WHERE HIRE_IDX IN(  SELECT HIRE_IDX
+                                                FROM T_JOB_HIRE
+                                                WHERE COMPANY_IDX=(SELECT COMPANY_IDX 
+                                                         FROM T_COMPANY 
+                                                     WHERE MEM_ID=#{mem_id}
+                                                   )
+                                             )
+	                     )H
+                         
+	                WHERE R.RESUME_IDX =A.RESUME_IDX
+                    AND A.HIRE_IDX = H.HIRE_IDX
+	            ) RESUME    
+	    )
+	WHERE R_NUM BETWEEN #{begin} AND #{end} 
+	  
+	</select>
+	
+	<select id="getResumeApplyTotal" parameterType="c_MyPageVO" resultType="int">
+	SELECT COUNT <include refid="member.common.include.select_RESUME_IDX" />
+	</select>
+	
+	<select id="getHireMyAdsTotal" parameterType="c_MyPageVO" resultType="int">
+	SELECT COUNT(HIRE_IDX) FROM T_JOB_HIRE WHERE MEM_ID= #{mem_id}  	
+	</select>
+	
+	<select id="isResume" parameterType="c_MyPageVO" resultType="int">
+	SELECT NVL(RESUME_IDX,0) FROM T_MEMBER_RESUME WHERE MEM_ID = #{mem_id} 
+	</select>
+	<select id="isApply" parameterType="c_MyPageVO" resultType="int">
+	SELECT COUNT(APPLY_IDX) FROM T_MEMBER_APPLY WHERE RESUME_IDX = #{resume_idx} AND HIRE_IDX=#{hire_idx} AND STATE=1
+	</select>
+	
+	<insert id="insertApply" parameterType="c_MyPageVO">
+	INSERT INTO T_MEMBER_APPLY(APPLY_IDX,COMPANY_IDX,HIRE_IDX,RESUME_IDX ) VALUES(APPLY_SQ.NEXTVAL,#{company_idx},#{hire_idx},#{resume_idx}) 
+	</insert>
+	
+	<update id="updateApplyDel" parameterType="c_MyPageVO">
+	UPDATE T_MEMBER_APPLY SET STATE=2 WHERE HIRE_IDX=#{hire_idx} AND RESUME_IDX=#{resume_idx} 
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
